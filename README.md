@@ -46,7 +46,7 @@ The final layer outputs "Action-values"( Being in a state s, if we take action a
 ## Evaluation
 
 The evaluation is done based on the improvement in the score of earned by the agent playing different games in Atari2600 which is shown as below:
-### Initial performance
+### Initial performance(Bad)
 <img src="./img/breakout_bad.gif" alt="breakout" width="200"/> 
 
 --------------
