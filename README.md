@@ -38,17 +38,16 @@ The final layer outputs "Action-values"( Being in a state s, if we take action a
 1) The implementation is done using the Keras API of tensor flow(for approximating the Q value_function).
 2) OpenAI gym is used for creating the environment of different Atari games and getting the observation space and action space values.
 3) The mathematical flow of this project is exactly like the one implemented in the paper which is as given below:
-# Mathematical Reference from the paper
+## Mathematical Reference from the paper
 <img src="./img/algo.png" alt="breakout" width="600"/> 
-
-### Reference paper:
-[1] Mnih, V., Kavukcuoglu, K., Silver, D., Graves, A., Antonoglou, I., Wierstra, D., & Riedmiller, M. (2013). Playing atari with deep reinforcement learning. arXiv preprint arXiv:1312.5602.
 
 --------------
 
 ## Evaluation
 
 The evaluation is done based on the improvement in the score of earned by the agent playing different games in Atari2600 which is shown as below:
+### Initial performance
+<img src="./img/breakout_bad.gif" alt="breakout" width="200"/> 
 
 --------------
 
