@@ -1,149 +1,190 @@
 import gym
-import random
-import numpy as np
-from IPython.display import clear_output
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
+from gym.wrappers import Monitor
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 
-# env = gym.make("Breakout-ram-v0")
-env = make_atari("BreakoutNoFrameskip-v4")
+import torch
+import torch
+import torch.nn.functional as F
+import torch.optim as optim
+import torch.nn as nn
 
-# env = gym.make('Assault-v0')
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
 
-# env.render()
-
-env = wrap_deepmind(env, frame_stack=True, scale=True)
-seed = 35
-env.seed(seed)
-n_actions = env.action_space.n
-
-##Necessary parameters
-e = 1.0
-min_e = 0.1
-max_e = 1.0
-e_range = (max_e - min_e)
-batch = 35
-n_steps_epi = 1000
-h, w, c = 250, 160, 3
-gam = 0.99
-epi = 10
-past_a = []
-past_s = []
-past_next_s = []
-past_r = []
-past_complete = []
-past_epi_r = []
-current_r = 0
-n_epi = 0
-n_frame = 0
-
-epi_random_frame = 50000
-epi_greedy = 10000
-max_buffer = 1000
-update_actions_q = 4
-update_actions_q_hat = 1000
-loss = keras.losses.Huber()
+import random
+from collections import namedtuple, deque
+import math
+import time
 
 
-def build_model():
-    inp = layers.Input(shape=(84,84,4,))
-    l1 = layers.Conv2D(32,10,strides=4,activation='relu')(inp)
-    l2 = layers.Conv2D(64,5,strides=3,activation='relu')(l1)
-    l3 = layers.Conv2D(128,3,strides=2,activation='relu')(l2)
-    l4 = layers.Flatten()(l3)
-    l5 = layers.Dense(512,activation='relu')(l4)
-    l6 = layers.Dense(256,activation='relu')(l5)
-    action = layers.Dense(n_actions, activation='linear')(l6)
-    return keras.Model(inputs=inp,outputs=action)
-    
-Q = build_model()
-Q_hat = build_model()
-learning_rate = 0.0001
-optim = keras.optimizers.Adam(learning_rate= learning_rate,clipnorm=1.0)
+env_name = "LunarLander-v2"
+# env_name = "CartPole-v0"
 
-for i_episode in range(1, epi+1):
-    state = np.array(env.reset())
-    complete = False
-    score = 0
+env = gym.make(env_name).unwrapped
+# env.seed(0)
 
-    # while not complete: ##while the episode is not complete
-    for i in range(1, n_steps_epi+1): 
-        n_frame += 1
+# Parameters
+EPS_THRESHOLD = 1.0
+EPS_END = 0.05
+EPS_DECAY = 0.999
+ACTION_DIM = env.action_space.n
+STATE_DIM = env.observation_space.shape[0]
+BUFFER_SIZE = 100000
+BATCH_SIZE = 64
+NETWORK_UPDATE = 1      # TODO
+TARGET_UPDATE = 1     # TODO
+REPLAY_START = 10000
+NO_EPISODES = 1800      # TODO
+TARGET_SCORE = 200.0    # TODO for LunarLander
+GAMMA = 0.99
+TAU = 1e-3
+LEARNING_RATE=5e-4
+HIDDEN_UNITS = [64, 64]
+TEST = True
 
-        if n_frame < epi_random_frame or e > np.random.rand(1)[0]:
-            action  = np.random.choice(n_actions)
-        else:
-            s_t = tf.convert_to_tensor(state)
-            s_t = tf.expand_dims(s_t, 0)
-            a_prob = Q(s_t,training=False)
-            action = tf.argmax(a_prob[0]).numpy()
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print("GPU Available? [{}]".format(torch.cuda.is_available()))
+total_steps = 0
 
-        e -= e_range/epi_greedy
-        e = max(e, min_e)
-        next_s, r, complete, info = env.step(action)
-        next_s = np.array(next_s)
+class ReplayBuffer(object):
+    def __init__(self, buffer_size):
+        self.buffer = deque([],maxlen=buffer_size)
 
-        score += r
-        past_a.append(action)
-        past_s.append(state)
-        past_next_s.append(next_s)
-        past_complete.append(complete)
-        past_r.append(r)
-        state = next_s
+    def store(self, *args):
+        experience = namedtuple('Experience',
+                        ('state', 'action', 'next_state', 'reward', 'done'))
+        self.buffer.append(experience(*args))
 
-        if n_frame % update_actions_q == 0 and len(past_complete) > batch:
-            idx = np.random.choice(range(len(past_complete)), size=batch)
+    def getBatch(self, batch_size):
+        return random.sample(self.buffer, batch_size)
 
-            sample_s = np.array([past_s[i] for i in idx])
-            sample_next_s = np.array([past_next_s[i] for i in idx])
-            sample_r = [past_r[i] for i in idx]
-            sample_a = [past_a[i] for i in idx]
-            sample_complete = tf.convert_to_tensor([float(past_complete[i]) for i in idx])
+    def __len__(self):
+        return len(self.buffer)
+
+
+class QNetwork(nn.Module):
+    def __init__(self, state_size, action_size, hidden_layers, seed):
+        super(QNetwork, self).__init__()
+        # self.seed = torch.manual_seed(seed)
+
+        self.hidden_layers = nn.ModuleList([nn.Linear(state_size, hidden_layers[0])])
+        layer_sizes = zip(hidden_layers[:-1], hidden_layers[1:])
+        self.hidden_layers.extend([nn.Linear(h1, h2) for h1, h2 in layer_sizes])
+        self.output = nn.Linear(hidden_layers[-1], action_size)
+
+    def forward(self, state):
+        x = state
+        for linear in self.hidden_layers:
+            x = F.relu(linear(x))
+        return self.output(x)
+
+
+loss_log = []
+Q_policy = QNetwork(state_size=STATE_DIM, action_size=ACTION_DIM, hidden_layers=HIDDEN_UNITS, seed=0).to(device)
+Q_policy_target = QNetwork(state_size=STATE_DIM, action_size=ACTION_DIM, hidden_layers=HIDDEN_UNITS, seed=0).to(device)
+optimizer = optim.Adam(Q_policy.parameters(), lr=LEARNING_RATE)
+
+buffer = ReplayBuffer(BUFFER_SIZE)
+reward_log = deque(maxlen=100) 
+
+if not TEST:
+
+    for episode in range(NO_EPISODES):
+        state = env.reset()
+        done = False
+        episode_reward = 0
+        frame = 0
+        
+        while not done:
+            if random.random() > EPS_THRESHOLD:
+                state_gpu = torch.from_numpy(state).float().unsqueeze(0).to(device)
+                with torch.no_grad():
+                    action = np.argmax(Q_policy(state_gpu).cpu().data.numpy())
+            else:
+                action = random.choice(np.arange(ACTION_DIM))
+
+            EPS_THRESHOLD = max(EPS_END, EPS_THRESHOLD*EPS_DECAY)
+
+            next_state, reward, done, _ = env.step(action)
+            buffer.store(state, action, next_state, reward, done)
             
-            f_r = Q_hat.predict(sample_next_s)
-            
-            updated_q = sample_r + gam *tf.reduce_max(f_r,axis=1)
-            updated_q = updated_q * (1 - sample_complete) - sample_complete
-            m = tf.one_hot(sample_a, n_actions)
+            state = next_state
+            episode_reward += reward
+            frame += 1
 
-            with tf.GradientTape() as tape:
-                q_val = Q(sample_s)
-                q_act = tf.reduce_sum(tf.multiply(q_val, m), axis=1)
-                l = loss(updated_q, q_act)
+            if len(buffer) > REPLAY_START:
+                batch = buffer.getBatch(BATCH_SIZE)
 
-            descents = tape.gradient(l, Q.trainable_variables)
-            optim.apply_gradients(zip(descents, Q.trainable_variables))
+                states = torch.from_numpy(np.vstack([b.state for b in batch if b is not None])).float().to(device)
+                actions = torch.from_numpy(np.vstack([b.action for b in batch if b is not None])).long().to(device)
+                next_states = torch.from_numpy(np.vstack([b.next_state for b in batch if b is not None])).float().to(device)
+                rewards = torch.from_numpy(np.vstack([b.reward for b in batch if b is not None])).float().to(device)
+                dones = torch.from_numpy(np.vstack([b.done for b in batch if b is not None]).astype(np.uint8)).float().to(device)
 
-        if n_frame % update_actions_q_hat == 0:
-            Q_hat.set_weights(Q.get_weights())
+                Q_targets_next = Q_policy_target(next_states).detach().max(1)[0].unsqueeze(1)
+                Q_targets = rewards + (GAMMA * Q_targets_next * (1 - dones))
 
-        if len(past_r)>max_buffer:
-            del past_r[:1]
-            del past_s[:1]
-            del past_next_s[:1]
-            del past_a[:1]
-            del past_complete[:1]
+                Q_expected = Q_policy(states).gather(1, actions)
 
-    past_epi_r.append(score)
-    if len(past_epi_r) > 100:
-        del past_epi_r[:1]
-    current_r = np.mean(past_epi_r)
+                loss = F.mse_loss(Q_expected, Q_targets)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-    n_epi += 1
+                # Soft update
+                if frame % TARGET_UPDATE == 0:
+                    for target_param, local_param in zip(Q_policy_target.parameters(), Q_policy.parameters()):
+                        target_param.data.copy_(TAU*local_param.data + (1.0-TAU)*target_param.data)
+        
+        reward_log.append(episode_reward)    
+        if episode % 1 == 0:
+            print("Episode: {} | Score: {:.2f} | Average Score: {:.2f} | Epsilon: {}".format(episode, episode_reward, np.mean(reward_log), EPS_THRESHOLD))
 
-    print("Episode is: {} and Score is: {}".format(epi, score))
+        if episode % 100 == 0:
+            timestr = time.strftime("%Y%m%d-%H%M%S")
+            torch.save(Q_policy.state_dict(), 'models/%s_%s.pth'% (env_name, timestr))
 
-env.reset()
-for _ in range(1000):
-    state = np.array(env.reset())
-    s_t = tf.convert_to_tensor(state)
-    s_t = tf.expand_dims(s_t, 0)
-    a_prob = Q(s_t,training=False)
-    action = tf.argmax(a_prob[0]).numpy()
+        if np.mean(reward_log)>=TARGET_SCORE:
+            print("Target Score Reached")
+            timestr = time.strftime("%Y%m%d-%H%M%S")
+            torch.save(Q_policy.state_dict(), 'models/%s_%s.pth'% (env_name, timestr))
+            break
 
-    env.render()
-    env.step(action) # take a random action
-env.close()
+import glob
+files = glob.glob("./models/*")
+file_str = []
+for i in range(len(files)):
+    files[i] = files[i][:-4]
+    file_str.append(files[i].split("/")[-1])
 
+if TEST:
+
+    for i in range(len(files)):
+        filename = files[i]
+        env = Monitor(env, './video/'+file_str[i], force=True)
+        # print(filename)
+        # filename = 'models/LunarLander-v2_20211206-113119'
+        Q_policy.load_state_dict(torch.load('%s.pth'% (filename)))
+
+        """ Test loop  """
+        # for i_episode in range(1, 10+1):
+        state = env.reset()
+        score = 0
+        done = False
+
+        while not done:
+
+            state_gpu = torch.from_numpy(state).float().unsqueeze(0).to(device)
+            with torch.no_grad():
+                action = np.argmax(Q_policy(state_gpu).cpu().data.numpy())
+
+            env.render()
+            next_state, reward, done, _ = env.step(action)
+            state = next_state
+            score += reward
+
+        env.close()
+        print('\r#TEST Episode:{}, Score:{:.2f}'.format(0, score))
+
+    """ End of the Test """
