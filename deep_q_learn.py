@@ -1,6 +1,5 @@
 import gym
 from gym.wrappers import Monitor
-from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 
 import torch
 import torch
@@ -9,14 +8,11 @@ import torch.optim as optim
 import torch.nn as nn
 
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
+import glob
 
 import random
 from collections import namedtuple, deque
-import math
 import time
-
 
 env_name = "LunarLander-v2"
 # env_name = "CartPole-v0"
@@ -32,11 +28,11 @@ ACTION_DIM = env.action_space.n
 STATE_DIM = env.observation_space.shape[0]
 BUFFER_SIZE = 100000
 BATCH_SIZE = 64
-NETWORK_UPDATE = 1 
-TARGET_UPDATE = 1
+NETWORK_UPDATE = 1      # TODO
+TARGET_UPDATE = 1     # TODO
 REPLAY_START = 10000
-NO_EPISODES = 1800
-TARGET_SCORE = 200.0
+NO_EPISODES = 1800      # TODO
+TARGET_SCORE = 200.0    # TODO for LunarLander
 GAMMA = 0.99
 TAU = 1e-3
 LEARNING_RATE=5e-4
@@ -151,24 +147,19 @@ if not TEST:
             torch.save(Q_policy.state_dict(), 'models/%s_%s.pth'% (env_name, timestr))
             break
 
-import glob
-files = glob.glob("./models/*")
-file_str = []
-for i in range(len(files)):
-    files[i] = files[i][:-4]
-    file_str.append(files[i].split("/")[-1])
 
 if TEST:
-
+    files = glob.glob("./models/*")
+    file_str = []
+    for i in range(len(files)):
+        files[i] = files[i][:-4]
+        file_str.append(files[i].split("/")[-1])
+        
     for i in range(len(files)):
         filename = files[i]
         env = Monitor(env, './video/'+file_str[i], force=True)
-        # print(filename)
-        # filename = 'models/LunarLander-v2_20211206-113119'
         Q_policy.load_state_dict(torch.load('%s.pth'% (filename)))
 
-        """ Test loop  """
-        # for i_episode in range(1, 10+1):
         state = env.reset()
         score = 0
         done = False
@@ -185,6 +176,4 @@ if TEST:
             score += reward
 
         env.close()
-        print('\r#TEST Episode:{}, Score:{:.2f}'.format(0, score))
-
-    """ End of the Test """
+        print('\r#TEST Model:{}, Score:{:.2f}'.format(file_str[i], score))
