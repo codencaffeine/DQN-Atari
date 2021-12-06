@@ -56,7 +56,7 @@ The final layer outputs "Action-values"( Being in a state s, if we take action a
 5) The current policy Q now again starts updating based on updated Q_hat.
 6) This process goes on for many episodes.
 7) An episode is the time steps required by the agent from the initial state to the final state (final state being success or failure)
-8) Now the process begins when the agent will make an action based on some initial policy. The agent starts from an initial state S1. This state is acquired by resetting the gaming environment (example: Atatri breakout)
+8) Now the process begins when the agent will make an action based on some initial policy. The agent starts from an initial state S1. This state is acquired by resetting the gaming environment (example: LunarLander-v2)
 9) Now the agent faces a dilemna. Good approach to solve this dilemna: To follow a some policy, but also have some probability for exploration.
 Over the period of time, as the agent keeps learning, and tries to converge to near optimal policy, we will decrease this probability of choosing random action, and we will choose actions that are sampled from our learned policy
 10)  This makes the agent greedy over time
