@@ -1,4 +1,4 @@
-# Deep Reinforcement Learning on Atari Games
+# Deep Reinforcement Learning on OpenAI Games
 
 <!-- ![alt text](./img/breakout.png) -->
 <img src="./img/breakout.png" alt="breakout" width="600"/>  
