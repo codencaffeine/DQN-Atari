@@ -1,4 +1,4 @@
-# Deep Reinforcement Learning on Atari Games
+# Deep Reinforcement Learning on OpenAI Gym
 
 <!-- ![alt text](./img/breakout.png) -->
 <img src="./img/lunar_aishwarya_anilkumar.png" alt="breakout" width="600"/>  
