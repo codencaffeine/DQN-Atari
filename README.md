@@ -1,7 +1,7 @@
-# Deep Reinforcement Learning on OpenAI Games
+# Deep Reinforcement Learning on Atari Games
 
 <!-- ![alt text](./img/breakout.png) -->
-<img src="./img/breakout.png" alt="breakout" width="600"/>  
+<img src="./img/lunar_aishwarya_anilkumar.png" alt="breakout" width="600"/>  
 Source [1]
 
 Table of contents
@@ -70,6 +70,13 @@ If it’s a terminal state, the future reward = 0 which makes it just rj
 15) With this new reward we just calculated for all sj, we will update our current policy Q network, with the new action values using gradient descent and back propogation
 16) In my implementation I am updating the current network Q every 4 timesteps and the target network Q_hat every C timesteps
 This delayed update is mainly because, the current Q network value does not change drastically over consecutive iterations.
+
+
+
+
+
+
+
 
 --------------
 
