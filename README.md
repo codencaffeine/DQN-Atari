@@ -27,12 +27,11 @@ Image reference: Galatzer-Levy, Isaac & Ruggles, Kelly & Chen, Zhe. (2018). Data
 
 ## Architecture
 The architecture of this project involves two models: 
-1) Q CNN (A convolutional Neural Network similar to the one implemented in the paper referenced above for action-value function Q)
-2) Q_hat CNN (similar model as Q CNN  for target action-value function Q_hat)
+1) Q DNN
+2) Q_hat DNN
 
-The CNN has total 6 layers:
-1) 3 Convolutional 2D layers
-2) 3 Dense layers
+The DNN has total 2 fully connected linear layers:
+
 The final layer outputs "Action-values"( Being in a state s, if we take action a how much will be the total reward)
 
 --------------
