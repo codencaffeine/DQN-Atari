@@ -11,6 +11,7 @@ Table of contents
    * [Architecture](#architecture)
    * [Implementation](#implementation)
    * [Evaluation](#evaluation)
+   * [Result](#result)
    * [References](#references)
 <!--       * [STDIN](#stdin)
       * [Local files](#local-files) -->
@@ -27,11 +28,12 @@ Image reference: Galatzer-Levy, Isaac & Ruggles, Kelly & Chen, Zhe. (2018). Data
 
 ## Architecture
 The architecture of this project involves two models: 
-1) Q DNN
-2) Q_hat DNN
+1) Q CNN (A convolutional Neural Network similar to the one implemented in the paper referenced above for action-value function Q)
+2) Q_hat CNN (similar model as Q CNN  for target action-value function Q_hat)
 
-The DNN has total 2 fully connected linear layers:
-
+The CNN has total 6 layers:
+1) 3 Convolutional 2D layers
+2) 3 Dense layers
 The final layer outputs "Action-values"( Being in a state s, if we take action a how much will be the total reward)
 
 --------------
@@ -85,9 +87,13 @@ The evaluation is done based on the improvement in the score of earned by the ag
 
 ### Agent gradually performing better:
 
-<img src="./img/4.gif" alt="breakout" width="200"/> <img src="./img/3.gif" alt="breakout" width="200"/> 
+<img src="./img/4.gif" alt="breakout" width="200"/>
 
-<img src="./img/6.gif" alt="breakout" width="200"/> <img src="./img/1.gif" alt="breakout" width="200"/> 
+<img src="./img/3.gif" alt="breakout" width="200"/> 
+
+<img src="./img/6.gif" alt="breakout" width="200"/> 
+
+<img src="./img/1.gif" alt="breakout" width="200"/> 
 
 
 --------------
@@ -103,7 +109,7 @@ The plot of Mean Reward against number of episodes:
 
 --------------
 ## Conclusion
-Therefore, updating the current Q network can be seen as policy evaluation step in reinforcement learning
+Therefor, updating the current Q network can be seen as policy evaluation step in reinforcement learning
 And updating the target Q_hat network which is my target network policy can be seen as policy improvement step of reinforcement learning.
 
 
