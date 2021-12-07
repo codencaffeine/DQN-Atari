@@ -85,13 +85,9 @@ The evaluation is done based on the improvement in the score of earned by the ag
 
 ### Agent gradually performing better:
 
-<img src="./img/4.gif" alt="breakout" width="200"/>
+<img src="./img/4.gif" alt="breakout" width="200"/> <img src="./img/3.gif" alt="breakout" width="200"/> 
 
-<img src="./img/3.gif" alt="breakout" width="200"/> 
-
-<img src="./img/6.gif" alt="breakout" width="200"/> 
-
-<img src="./img/1.gif" alt="breakout" width="200"/> 
+<img src="./img/6.gif" alt="breakout" width="200"/> <img src="./img/1.gif" alt="breakout" width="200"/> 
 
 
 --------------
@@ -107,7 +103,7 @@ The plot of Mean Reward against number of episodes:
 
 --------------
 ## Conclusion
-Therefor, updating the current Q network can be seen as policy evaluation step in reinforcement learning
+Therefore, updating the current Q network can be seen as policy evaluation step in reinforcement learning
 And updating the target Q_hat network which is my target network policy can be seen as policy improvement step of reinforcement learning.
 
 
