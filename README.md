@@ -50,24 +50,24 @@ The final layer outputs "Action-values"( Being in a state s, if we take action a
 
 ## Description
 
-1) The main idea of this project is to combine the end-to-end reinforcement learning with deep neural network to train the D-Q-N agent.
-2) The two neural networks implemented in this project are used to approximate the q tables for action-value function Q and target action_value function Q_hat
-3) Q_hat is the initial policy, which Q is the current policy and gets updated and evaluates the initial policy Q_hat over many iterations.
-4) In this program, I am updating the initial policy Q_hat every C steps making it equal to Q
+1) The main idea of this project is to combine the reinforcement learning with deep neural network to train the D-Q-N agent.
+2) The two neural networks implemented in this project are used to approximate the q tables, for action-value function Q and target action_value function Q_hat
+3) Q_hat is the initial target policy, while Q is the running policy which gets updated and evaluates the initial policy Q_hat over many iterations.
+4) In this program, I am updating the Q_hat every C steps making it equal to Q
 5) The current policy Q now again starts updating based on updated Q_hat.
-6) This process goes on for many episodes.
+6) This process goes on for many iterations.
 7) An episode is the time steps required by the agent from the initial state to the final state (final state being success or failure)
-8) Now the process begins when the agent will make an action based on some initial policy. The agent starts from an initial state S1. This state is acquired by resetting the gaming environment (example: LunarLander-v2)
-9) Now the agent faces a dilemna. Good approach to solve this dilemna: To follow a some policy, but also have some probability for exploration.
-Over the period of time, as the agent keeps learning, and tries to converge to near optimal policy, we will decrease this probability of choosing random action, and we will choose actions that are sampled from our learned policy
+8) Now the process begins when the agent will make an action based on some initial Q_hat. The agent starts from an initial state S1. This state is acquired by resetting the gaming environment (example: LunarLander-v2)
+9) Now the agent faces a dilemna. Good approach to solve this dilemna: To follow a some policy, but also have high probability for exploration.
+Over the period of time, as the agent keeps learning, and tries to converge to near optimal policy, we will decrease this probability of choosing random action, and we will choose actions that are sampled from the replay memory(past experiences of the agent)
 10)  This makes the agent greedy over time
 11)  After we acquire an action from the previous step, we will use it in the gym environment and get the transition( current state, next state, reward, done)
-12)  We will use a replay memory to store all the previous n transitions. For training our agent we will randomly sample a fixed sized batch from this memory.
-13)  Now that we have sampled some past experiences, we will use our target policy Q_hat to calculate reward for all the sampled current states sj
+12)  For training our agent we will randomly sample a fixed sized batch from replay memory.
+13)  Now that we have sampled some past experiences, we will use Q_hat to calculate reward for all the sampled current states sj
 We select a maximum action value from next state
 If it’s a terminal state, the future reward = 0 which makes it just rj
-14) With this new reward we just calculated for all sj, we will update our current policy Q network, with the new action values using gradient descent and back propogation
-15) In my implementation I am updating the current network Q every 4 timesteps and the target network Q_hat every C timesteps
+1)  With this new reward we just calculated for all sj, we will update our running policy Q network, with the new action values using gradient descent and back propogation
+2)  In my implementation I am updating the running policy Q every 4 timesteps and the target network Q_hat every C timesteps
 This delayed update is mainly because, the current Q network value does not change drastically over consecutive iterations.
 
 
